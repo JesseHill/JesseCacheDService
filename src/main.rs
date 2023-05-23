@@ -27,16 +27,6 @@ fn main(req: Request) -> Result<Response, Error> {
                 .send("jessehill.github.io")?
         }
 
-        "/dogandfrog" => {
-            Request::get("https://jessebhill.wixsite.com/dogandfrog")
-                .send("jessebhill.wixsite.com")?
-        }
-
-        "/google" => {
-            Request::get("https://www.google.com")
-                .send("www.google.com")?
-        }
-
         "/lookup-test" => {
             run_lookup_test(req)
         }
