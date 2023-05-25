@@ -77,34 +77,67 @@ fn main(req: Request) -> Result<Response, Error> {
 // }
 
 fn run_low_level_test_old_school(req: Request) -> Response {
-    println!(" --- Running lookup test 4 --- ");
+    println!(" --- Running lookup test 8 --- ");
     let key: CacheKey = CacheKey::from("a random key");
-    let lookup_handle = transaction_lookup(key.clone(), &LookupOptions::default()).unwrap();
-    let mut body_handle = lookup_handle.transaction_insert(&WriteOptions::default()).unwrap();
-    body_handle.write_str("Hello this is dog");
-    body_handle.finish().unwrap();
 
-    match lookup(key.clone(), &LookupOptions::default()) {
+    let lookup_handle = transaction_lookup(key.clone(), &LookupOptions::default()).unwrap();
+
+    let write_options = WriteOptions {
+        max_age_ns: 1000000000000000000,
+        ..WriteOptions::default()
+    };
+
+    if lookup_handle.get_state().unwrap() == CacheLookupState::MUST_INSERT_OR_UPDATE {
+        let (mut body_handle, cache_handle) = lookup_handle
+            .transaction_insert_and_stream_back(&write_options)
+            .unwrap();
+        body_handle.write_str("Hello this is dog");
+        body_handle.finish().unwrap();
+
+        let body_option = cache_handle.get_body(&GetBodyOptions::default()).unwrap();
+        if body_option.is_some() {
+            println!(
+                "Insert thinks it has body: {}",
+                body_option.unwrap().into_string()
+            );
+        } else {
+            println!("Body option is invalid");
+        }
+    }
+
+    match transaction_lookup(key.clone(), &LookupOptions::default()) {
         Ok(cache_handle) => {
             let lookup_state = cache_handle.get_state().unwrap();
-            println!("cache_handle found: {}", lookup_state.contains(CacheLookupState::FOUND));
-            println!("cache_handle stale: {}", lookup_state.contains(CacheLookupState::STALE));
-            println!("cache_handle usable: {}", lookup_state.contains(CacheLookupState::USABLE));
-            println!("cache_handle must_insert?: {}", lookup_state.contains(CacheLookupState::MUST_INSERT_OR_UPDATE));
+            println!(
+                "cache_handle found: {}",
+                lookup_state.contains(CacheLookupState::FOUND)
+            );
+            println!(
+                "cache_handle stale: {}",
+                lookup_state.contains(CacheLookupState::STALE)
+            );
+            println!(
+                "cache_handle usable: {}",
+                lookup_state.contains(CacheLookupState::USABLE)
+            );
+            println!(
+                "cache_handle must_insert?: {}",
+                lookup_state.contains(CacheLookupState::MUST_INSERT_OR_UPDATE)
+            );
             match cache_handle.get_body(&GetBodyOptions::default()) {
-            Ok(body_handle) => {
-                if body_handle.is_some() {
-                    let body = body_handle.unwrap().into_string();
-                    println!("Found body from lookup: {}", body);
-                } else {
-                    println!("Body handle was empty");
+                Ok(body_handle) => {
+                    if body_handle.is_some() {
+                        let body = body_handle.unwrap().into_string();
+                        println!("Found body from lookup: {}", body);
+                    } else {
+                        println!("Body handle was empty");
+                    }
+                }
+                Err(message) => {
+                    println!("Error on get_body: {}", message.code);
                 }
             }
-            Err(message) => {
-                println!("Error on get_body: {}", message.code);
-            }
         }
-        },
         Err(message) => {
             println!("Error on lookup: {}", message.code);
         }
