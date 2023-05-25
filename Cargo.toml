@@ -13,7 +13,8 @@ debug = 1
 [dependencies]
 fastly = "^0.9.2"
 bytes = {version = "^1.4.0", features = ["serde"]}
-# fastly = { version = "^0.9.2", git = "ssh://git@github.com/fastly/ExecuteD.git", rev = "5a473a56813af70006b80729356b2df929149709" }
-fastly-cache-preview = { version = "^0.9.2", git = "ssh://git@github.com/fastly/ExecuteD.git", rev = "5a473a56813af70006b80729356b2df929149709" }
+# fastly-cache-preview = { version = "^0.9.2", git = "ssh://git@github.com/fastly/ExecuteD.git", rev = "5a473a56813af70006b80729356b2df929149709" }
+fastly-cache-preview = { version = "^0.9.2", git = "ssh://git@github.com/fastly/ExecuteD.git", rev = "jenkins/release/20230407-15706.0gb9df8a653282" }
+
 sha2 = "^0.10"
 serde_json ="1.0"
