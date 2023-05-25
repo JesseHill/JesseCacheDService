@@ -1,14 +1,13 @@
-use fastly::http::{body, header, Method, StatusCode};
+use fastly::http::{header, Method, StatusCode};
 use fastly::kv_store::KVStore;
 use fastly::{Error, Request, Response};
 // use fastly_cache_preview::{CacheKey, Transaction, insert};
 use fastly_cache_preview::handle::{
-    insert, lookup, transaction_lookup, CacheKey, CacheLookupState, GetBodyOptions, LookupOptions,
+    lookup, transaction_lookup, CacheKey, CacheLookupState, GetBodyOptions, LookupOptions,
     WriteOptions,
 };
 
 use serde_json::json;
-use std::io::Write;
 use std::time::Instant;
 
 #[fastly::main]
@@ -78,11 +77,11 @@ fn main(req: Request) -> Result<Response, Error> {
 // }
 
 fn run_low_level_test_old_school(req: Request) -> Response {
-    println!(" --- Running lookup test 3 --- ");
+    println!(" --- Running lookup test 4 --- ");
     let key: CacheKey = CacheKey::from("a random key");
-    let mut body_handle = insert(key.clone(), &WriteOptions::default()).unwrap();
+    let lookup_handle = transaction_lookup(key.clone(), &LookupOptions::default()).unwrap();
+    let mut body_handle = lookup_handle.transaction_insert(&WriteOptions::default()).unwrap();
     body_handle.write_str("Hello this is dog");
-    body_handle.flush().unwrap();
     body_handle.finish().unwrap();
 
     match lookup(key.clone(), &LookupOptions::default()) {
