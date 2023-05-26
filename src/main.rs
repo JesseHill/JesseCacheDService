@@ -88,7 +88,8 @@ fn run_kv_lookup_test(req: Request) -> Response {
     let mut store = KVStore::open("jesse_kv_store").unwrap().unwrap();
     let key = "firstKey";
     store.insert(&key, "Hello! Let's test some latency!").unwrap();
-
+    // Fetch once before the timed loop to warm things up.
+    store.lookup(key).unwrap().unwrap();
 
     let mut results = Vec::new();
     for _ in 0..iterations {
