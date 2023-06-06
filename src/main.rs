@@ -43,7 +43,7 @@ fn extract_params(req: &Request) -> (i32, String) {
     (iterations, key)
 }
 
-fn insert_cache_object(key: CacheKey, message: &str) {
+fn insert_cache_object(key: &CacheKey, message: &str) {
     match Transaction::lookup(key.clone()).execute() {
         Ok(handle) => {
             let found = handle.found();
@@ -67,7 +67,7 @@ fn run_lookup_test(req: Request) -> Response {
     println!("--- Running low-level lookup test: 1 ---");
 
     let key = CacheKey::from(key);
-    insert_cache_object(key.clone(), "Hello! Let's test some latency!");
+    insert_cache_object(&key, "Hello! Let's test some latency!");
 
     let mut results = Vec::new();
     for _ in 0..iterations {
