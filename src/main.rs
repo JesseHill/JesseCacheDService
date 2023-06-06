@@ -34,7 +34,16 @@ fn main(req: Request) -> Result<Response, Error> {
     Ok(response.with_header("X-Service-Name", "JesseCacheDService"))
 }
 
-fn insert_cache_object(key: CacheKey, message: &str) {
+fn extract_params(req: &Request) -> (i32, String) {
+    let iterations_str = req.get_query_parameter("iterations").unwrap();
+    let iterations = iterations_str.parse::<i32>().unwrap();
+
+    let key = req.get_query_parameter("key").unwrap_or("some sort of cache key").to_string();
+
+    (iterations, key)
+}
+
+fn insert_cache_object(key: &CacheKey, message: &str) {
     match Transaction::lookup(key.clone()).execute() {
         Ok(handle) => {
             let found = handle.found();
@@ -53,13 +62,12 @@ fn insert_cache_object(key: CacheKey, message: &str) {
 }
 
 fn run_lookup_test(req: Request) -> Response {
-    let iterations_str = req.get_query_parameter("iterations").unwrap();
-    let iterations = iterations_str.parse::<i32>().unwrap();
+    let (iterations, key) = extract_params(&req);
 
     println!("--- Running low-level lookup test: 1 ---");
 
-    let key = CacheKey::from("some sort of cache key");
-    insert_cache_object(key.clone(), "Hello! Let's test some latency!");
+    let key = CacheKey::from(key);
+    insert_cache_object(&key, "Hello! Let's test some latency!");
 
     let mut results = Vec::new();
     for _ in 0..iterations {
@@ -80,21 +88,19 @@ fn run_lookup_test(req: Request) -> Response {
 }
 
 fn run_kv_lookup_test(req: Request) -> Response {
-    let iterations_str = req.get_query_parameter("iterations").unwrap();
-    let iterations = iterations_str.parse::<i32>().unwrap();
+    let (iterations, key) = extract_params(&req);
     
     println!("--- Running kv lookup test: 1 ---");
 
     let mut store = KVStore::open("jesse_kv_store").unwrap().unwrap();
-    let key = "firstKey";
     store.insert(&key, "Hello! Let's test some latency!").unwrap();
     // Fetch once before the timed loop to warm things up.
-    store.lookup(key).unwrap().unwrap();
+    store.lookup(&key).unwrap().unwrap();
 
     let mut results = Vec::new();
     for _ in 0..iterations {
         let start = Instant::now();
-        let body = store.lookup(key).unwrap().unwrap();
+        let body = store.lookup(&key).unwrap().unwrap();
         results.push(json!({
             "body": body.into_string(),
             "lookupTimeTaken": start.elapsed(),
