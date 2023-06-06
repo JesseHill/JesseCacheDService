@@ -34,6 +34,13 @@ fn main(req: Request) -> Result<Response, Error> {
     Ok(response.with_header("X-Service-Name", "JesseCacheDService"))
 }
 
+fn extract_params(req: &Request) -> i32 {
+    let iterations_str = req.get_query_parameter("iterations").unwrap();
+    let iterations = iterations_str.parse::<i32>().unwrap();
+
+    iterations
+}
+
 fn insert_cache_object(key: CacheKey, message: &str) {
     match Transaction::lookup(key.clone()).execute() {
         Ok(handle) => {
@@ -53,8 +60,7 @@ fn insert_cache_object(key: CacheKey, message: &str) {
 }
 
 fn run_lookup_test(req: Request) -> Response {
-    let iterations_str = req.get_query_parameter("iterations").unwrap();
-    let iterations = iterations_str.parse::<i32>().unwrap();
+    let iterations = extract_params(&req);
 
     println!("--- Running low-level lookup test: 1 ---");
 
@@ -80,8 +86,7 @@ fn run_lookup_test(req: Request) -> Response {
 }
 
 fn run_kv_lookup_test(req: Request) -> Response {
-    let iterations_str = req.get_query_parameter("iterations").unwrap();
-    let iterations = iterations_str.parse::<i32>().unwrap();
+    let iterations = extract_params(&req);
     
     println!("--- Running kv lookup test: 1 ---");
 
